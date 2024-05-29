@@ -116,8 +116,8 @@ class ShadowHandScissors(BaseTask):
             "egg": "mjcf/open_ai_assets/hand/egg.xml",
             "pen": "mjcf/open_ai_assets/hand/pen.xml",
             # "pot": "mjcf/pot.xml",
-            "pot": "mjcf/scissors/10495/mobility.urdf"
-            #"pot": "mjcf/pliers/mobility.urdf"
+            #"pot": "mjcf/scissors/10495/mobility.urdf"
+            "pot": "mjcf/pliers/mobility.urdf"
         }
 
         if "asset" in self.cfg["env"]:
@@ -430,13 +430,14 @@ class ShadowHandScissors(BaseTask):
         shadow_another_hand_start_pose.r = gymapi.Quat().from_euler_zyx(3.14159, 0, 1.57)
 
         object_start_pose = gymapi.Transform()
-        object_start_pose.p = gymapi.Vec3(0.0, 0., 0.6)
-        object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 1.57)
-        pose_dx, pose_dy, pose_dz = -1.0, 0.0, -0.0
+        object_start_pose.p = gymapi.Vec3(0.0, 0.1, 0.6)
+        object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 0)
+        #object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 1.57)
+        pose_dx, pose_dy, pose_dz = 0.0, 0.0, 0.0
 
-        # object_start_pose.p.x = shadow_hand_start_pose.p.x + pose_dx
-        # object_start_pose.p.y = shadow_hand_start_pose.p.y + pose_dy
-        # object_start_pose.p.z = shadow_hand_start_pose.p.z + pose_dz
+        #object_start_pose.p.x = shadow_hand_start_pose.p.x + pose_dx
+        #object_start_pose.p.y = shadow_hand_start_pose.p.y + pose_dy
+        #object_start_pose.p.z = shadow_hand_start_pose.p.z + pose_dz
 
         if self.object_type == "pen":
             object_start_pose.p.z = shadow_hand_start_pose.p.z + 0.02

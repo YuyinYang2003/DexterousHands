@@ -5,25 +5,25 @@
 		<visual name="leg-1">
 			<origin xyz="0 0 -0.4114376480132342"/>
 			<geometry>
-				<mesh filename="textured_objs/original-2.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-2.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</visual>
 		<visual name="leg-1">
 			<origin xyz="0 0 -0.4114376480132342"/>
 			<geometry>
-				<mesh filename="textured_objs/original-3.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-3.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</visual>
 		<collision>
 			<origin xyz="0 0 -0.4114376480132342"/>
 			<geometry>
-				<mesh filename="textured_objs/original-2.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-2.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</collision>
 		<collision>
 			<origin xyz="0 0 -0.4114376480132342"/>
 			<geometry>
-				<mesh filename="textured_objs/original-3.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-3.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</collision>
 	</link>
@@ -38,25 +38,25 @@
 		<visual name="base_body-2">
 			<origin xyz="0 0 0"/>
 			<geometry>
-				<mesh filename="textured_objs/original-4.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-4.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</visual>
 		<visual name="base_body-2">
 			<origin xyz="0 0 0"/>
 			<geometry>
-				<mesh filename="textured_objs/original-1.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-1.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</visual>
 		<collision>
 			<origin xyz="0 0 0"/>
 			<geometry>
-				<mesh filename="textured_objs/original-4.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-4.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</collision>
 		<collision>
 			<origin xyz="0 0 0"/>
 			<geometry>
-				<mesh filename="textured_objs/original-1.obj" scale="0.2 0.2 0.2"/>
+				<mesh filename="textured_objs/original-1.obj" scale="0.3 0.3 0.3"/>
 			</geometry>
 		</collision>
 	</link>
