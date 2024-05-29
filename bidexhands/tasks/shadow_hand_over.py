@@ -108,7 +108,8 @@ class ShadowHandOver(BaseTask):
             print("New episode length: ", self.max_episode_length)
 
         self.object_type = self.cfg["env"]["objectType"]
-        assert self.object_type in ["block", "egg", "pen", "ycb/banana", "ycb/can", "ycb/mug", "ycb/brick"]
+        #assert self.object_type in ["block", "egg", "pen", "ycb/banana", "ycb/can", "ycb/mug", "ycb/brick"]
+        assert self.object_type in ["block", "egg", "pen", "ycb/banana", "ycb/can", "ycb/mug", "ycb/brick", "ycb/cube", "knife"]
 
         self.ignore_z = (self.object_type == "pen")
 
@@ -119,7 +120,9 @@ class ShadowHandOver(BaseTask):
             "ycb/banana": "urdf/ycb/011_banana/011_banana.urdf",
             "ycb/can": "urdf/ycb/010_potted_meat_can/010_potted_meat_can.urdf",
             "ycb/mug": "urdf/ycb/025_mug/025_mug.urdf",
-            "ycb/brick": "urdf/ycb/061_foam_brick/061_foam_brick.urdf"
+            "ycb/brick": "urdf/ycb/061_foam_brick/061_foam_brick.urdf",
+            "ycb/cube": "urdf/ycb/077_rubiks_cube/tsdf/nontextured.xml",
+            "knife": "mjcf/kettle/mobility.urdf"
         }
 
         # can be "openai", "full_no_vel", "full", "full_state"

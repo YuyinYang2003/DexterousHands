@@ -118,7 +118,8 @@ class ShadowHandKettle(BaseTask):
             "egg": "mjcf/open_ai_assets/hand/egg.xml",
             "pen": "mjcf/open_ai_assets/hand/pen.xml",
             # "pot": "mjcf/pot.xml",
-            "pot": "mjcf/kettle/mobility.urdf"
+            "pot": "mjcf/kettle/mobility.urdf",
+            "knife": "mjcf/knife/mobility.urdf"
         }
 
         if "asset" in self.cfg["env"]:
