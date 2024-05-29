@@ -430,8 +430,9 @@ class ShadowHandScissors(BaseTask):
         shadow_another_hand_start_pose.r = gymapi.Quat().from_euler_zyx(3.14159, 0, 1.57)
 
         object_start_pose = gymapi.Transform()
-        object_start_pose.p = gymapi.Vec3(0.0, 0.1, 0.6)
-        object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 0)
+        #object_start_pose.p = gymapi.Vec3(0.0, 0., 0.6)
+        object_start_pose.p = gymapi.Vec3(0.0, 0.15, 0.6)
+        object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 0.24)
         #object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 1.57)
         pose_dx, pose_dy, pose_dz = 0.0, 0.0, 0.0
 
@@ -714,15 +715,23 @@ class ShadowHandScissors(BaseTask):
 
         self.scissors_right_handle_pos = self.rigid_body_states[:, 26 * 2 + 2, 0:3]
         self.scissors_right_handle_rot = self.rigid_body_states[:, 26 * 2 + 2, 3:7]
+        #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.)
+        #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.2)
+        #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.1)
+        #lvhonglan
         self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.)
-        self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.2)
-        self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.1)
+        self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0.05)
+        self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.6)
 
+        
         self.scissors_left_handle_pos = self.rigid_body_states[:, 26 * 2 + 1, 0:3]
         self.scissors_left_handle_rot = self.rigid_body_states[:, 26 * 2 + 1, 3:7]
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.1)
         self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
-        self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.1)
+        self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.06)
+        self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.2)
 
         self.left_hand_pos = self.rigid_body_states[:, 3 + 26, 0:3]
         self.left_hand_rot = self.rigid_body_states[:, 3 + 26, 3:7]
