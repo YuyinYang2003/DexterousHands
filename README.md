@@ -32,30 +32,34 @@ Reaching human-level sophistication of hand dexterity and bimanual coordination 
 
 Contents of this repo are as follows:
 
-- [Installation](#Installation)
-  - [Pre-requisites](#Installation)
-  <!-- - [Install from PyPI](#Install-from-PyPI) -->
-  - [Install from source code](#Install-from-source-code)
-- [Introduction to Bi-DexHands](#Introduction-to-Bi-DexHands)
-- [Overview of Environments](./docs/environments.md)
-- [Overview of Algorithms](./docs/algorithms.md)
-- [Getting Started](#Getting-Started)
-  - [Tasks](#Tasks)
-  - [Training](#Training)
-  - [Testing](#Testing)
-  - [Plotting](#Plotting)
-  - [Use Bi-DexHands in Python scripts](#Use-Bi-DexHands-in-Python-scripts)
-- [Enviroments Performance](#Enviroments-Performance)
-  - [Figures](#Figures)
-- [Offline RL Datasets](#Offline-RL-Datasets)
-- [Use rl_games to train our tasks](#Use-rl_games-to-train-our-tasks)
-- [Future Plan](#Future-Plan)
-- [Customizing your Environments](docs/customize-the-environment.md)
-- [How to change the type of dexterous hand](docs/Change-the-type-of-dexterous-hand.md)
-- [How to add a robotic arm drive to the dexterous hand](docs/Add-a-robotic-arm-drive-to-the-dexterous-hand.md)
-- [The Team](#The-Team)
-- [License](#License)
-<br></br>
+- [Bi-DexHands: Bimanual Dexterous Manipulation via Reinforcement Learning](#bi-dexhands-bimanual-dexterous-manipulation-via-reinforcement-learning)
+    - [Update](#update)
+  - [Installation](#installation)
+    - [Pre-requisites](#pre-requisites)
+      - [Install from source code](#install-from-source-code)
+  - [Introduction](#introduction)
+  - [Getting Started](#getting-started)
+    - [Tasks](#tasks)
+    - [Training](#training)
+      - [Training Examples](#training-examples)
+        - [RL/MARL Examples](#rlmarl-examples)
+        - [Multi-task/Meta RL Examples](#multi-taskmeta-rl-examples)
+      - [Gym-Like API](#gym-like-api)
+      - [RL/Multi-Agent RL API](#rlmulti-agent-rl-api)
+    - [Testing](#testing)
+    - [Plotting](#plotting)
+    - [Use Bi-DexHands in Python scripts](#use-bi-dexhands-in-python-scripts)
+  - [Enviroment Performance](#enviroment-performance)
+    - [Figures](#figures)
+  - [Offline RL Datasets](#offline-rl-datasets)
+    - [Data Collection](#data-collection)
+    - [Offline Data](#offline-data)
+    - [Use rl\_games to train our tasks](#use-rl_games-to-train-our-tasks)
+  - [Known issue](#known-issue)
+  - [Future Plan](#future-plan)
+  - [Citation](#citation)
+  - [The Team](#the-team)
+  - [License](#license)
 
 For more information about this work, please check [our paper.](https://arxiv.org/abs/2206.08686)
 
@@ -539,4 +543,4 @@ We also recommend users to read [the early work](https://arxiv.org/abs/2009.0510
 Bi-DexHands has an Apache license, as found in the [LICENSE](LICENSE) file.
 
 
-test123
+test1234
