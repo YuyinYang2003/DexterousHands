@@ -135,10 +135,16 @@ class ShadowHandToaster(BaseTask):
         print("Obs type:", self.obs_type)
 
         self.num_point_cloud_feature_dim = 768
+        #self.num_obs_dict = {
+        #    "point_cloud": 417 + self.num_point_cloud_feature_dim * 3,
+        #    "point_cloud_for_distill": 417 + self.num_point_cloud_feature_dim * 3,
+        #    "full_state": 417
+        #}
+        #test
         self.num_obs_dict = {
-            "point_cloud": 417 + self.num_point_cloud_feature_dim * 3,
-            "point_cloud_for_distill": 417 + self.num_point_cloud_feature_dim * 3,
-            "full_state": 417
+            "point_cloud": 426 + self.num_point_cloud_feature_dim * 3,
+            "point_cloud_for_distill": 426 + self.num_point_cloud_feature_dim * 3,
+            "full_state": 426
         }
         self.num_hand_obs = 72 + 95 + 26 + 6
         self.up_axis = 'z'
@@ -431,7 +437,7 @@ class ShadowHandToaster(BaseTask):
         toast_asset_options.thickness = 0.001
 
         toast_asset = self.gym.create_box(self.sim, table_dims.x, table_dims.y, toast_dims.z, gymapi.AssetOptions())
-
+        #_asset = self.gym.load_asset(self.sim, asset_root, bucket_asset_file, bucket_asset_options)
         shadow_hand_start_pose = gymapi.Transform()
         shadow_hand_start_pose.p = gymapi.Vec3(0.55, 0.2, 0.8)
         shadow_hand_start_pose.r = gymapi.Quat().from_euler_zyx(3.14159, 0, 1.57)
@@ -592,7 +598,7 @@ class ShadowHandToaster(BaseTask):
             #self.gym.set_actor_scale(env_ptr, object_handle, 0.2)
 
             # add toast
-            toast_handle = self.gym.create_actor(env_ptr, toast_asset, toast_pose, "toast", i, 0, 0)
+            toast_handle = self.gym.create_actor(env_ptr, toast_asset, toast_start_pose, "toast", i, 0, 0)
             #self.gym.set_rigid_body_texture(env_ptr, table_handle, 0, gymapi.MESH_VISUAL, table_texture_handle)
             toast_idx = self.gym.get_actor_index(env_ptr, toast_handle, gymapi.DOMAIN_SIM)
             self.toast_indices.append(toast_idx)
@@ -695,7 +701,7 @@ class ShadowHandToaster(BaseTask):
         """
         self.rew_buf[:], self.reset_buf[:], self.reset_goal_buf[:], self.progress_buf[:], self.successes[:], self.consecutive_successes[:] = compute_hand_reward(
             self.rew_buf, self.reset_buf, self.reset_goal_buf, self.progress_buf, self.successes, self.consecutive_successes,
-            self.max_episode_length, self.object_pos, self.object_rot, self.goal_pos, self.goal_rot, self.scissors_right_handle_pos, self.scissors_left_handle_pos, self.object_dof_pos,
+            self.max_episode_length, self.object_pos, self.object_rot, self.goal_pos, self.goal_rot, self.toaster_slot1_pos, self.toaster_slot2_pos, self.toast_right_handle_pos, self.toast_left_handle_pos, self.toast_bottom_pos, self.object_dof_pos,
             self.left_hand_pos, self.right_hand_pos, self.right_hand_ff_pos, self.right_hand_mf_pos, self.right_hand_rf_pos, self.right_hand_lf_pos, self.right_hand_th_pos, 
             self.left_hand_ff_pos, self.left_hand_mf_pos, self.left_hand_rf_pos, self.left_hand_lf_pos, self.left_hand_th_pos, 
             self.dist_reward_scale, self.rot_reward_scale, self.rot_eps, self.actions, self.action_penalty_scale,
@@ -747,9 +753,9 @@ class ShadowHandToaster(BaseTask):
 
         self.toaster_slot2_pos = self.rigid_body_states[:, 26 * 2, 0:3].clone()
         self.toaster_slot2_rot = self.rigid_body_states[:, 26 * 2, 3:7].clone()
-        self.toaster_slot2_pos = self.kettle_spout_pos + quat_apply(self.kettle_spout_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.kettle_spout_pos = self.kettle_spout_pos + quat_apply(self.kettle_spout_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0.2)
-        self.kettle_spout_pos = self.kettle_spout_pos + quat_apply(self.kettle_spout_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.07)
+        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0.2)
+        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.07)
         
         self.toast_right_handle_pos = self.rigid_body_states[:, 26 * 2 + 3, 0:3]
         self.toast_right_handle_rot = self.rigid_body_states[:, 26 * 2 + 3, 3:7]
@@ -762,14 +768,23 @@ class ShadowHandToaster(BaseTask):
         self.toast_right_handle_pos = self.toast_right_handle_pos + quat_apply(self.toast_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.6)
 
         
-        self.toast_left_handle_pos = self.rigid_body_states[:, 26 * 2 + 1, 0:3]
-        self.toast_left_handle_rot = self.rigid_body_states[:, 26 * 2 + 1, 3:7]
+        self.toast_left_handle_pos = self.rigid_body_states[:, 26 * 2 + 3, 0:3]
+        self.toast_left_handle_rot = self.rigid_body_states[:, 26 * 2 + 3, 3:7]
         #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
         #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
         #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.1)
         self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
         self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.07)
         self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.22)
+
+        self.toast_bottom_pos = self.rigid_body_states[:, 26 * 2 + 3, 0:3]
+        self.toast_bottom_rot = self.rigid_body_states[:, 26 * 2 + 3, 3:7]
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.1)
+        self.toast_bottom_pos = self.toast_bottom_pos + quat_apply(self.toast_bottom_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        self.toast_bottom_pos = self.toast_bottom_pos + quat_apply(self.toast_bottom_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.07)
+        self.toast_bottom_pos = self.toast_bottom_pos + quat_apply(self.toast_bottom_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.22)
 
         self.left_hand_pos = self.rigid_body_states[:, 3 + 26, 0:3]
         self.left_hand_rot = self.rigid_body_states[:, 3 + 26, 3:7]
@@ -906,13 +921,16 @@ class ShadowHandToaster(BaseTask):
 
         action_another_obs_start = hand_another_pose_start + 6
         self.obs_buf[:, action_another_obs_start:action_another_obs_start + 26] = self.actions[:, 26:]
-
+        ### check
         obj_obs_start = action_another_obs_start + 26  # 144
         self.obs_buf[:, obj_obs_start:obj_obs_start + 7] = self.object_pose
         self.obs_buf[:, obj_obs_start + 7:obj_obs_start + 10] = self.object_linvel
         self.obs_buf[:, obj_obs_start + 10:obj_obs_start + 13] = self.vel_obs_scale * self.object_angvel
-        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.scissors_right_handle_pos
-        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.scissors_left_handle_pos
+        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.toaster_slot1_pos    
+        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.toaster_slot2_pos
+        self.obs_buf[:, obj_obs_start + 19:obj_obs_start + 22] = self.toast_right_handle_pos
+        self.obs_buf[:, obj_obs_start + 22:obj_obs_start + 25] = self.toast_left_handle_pos
+        self.obs_buf[:, obj_obs_start + 25:obj_obs_start + 28] = self.toast_bottom_pos        
         # goal_obs_start = obj_obs_start + 13  # 157 = 144 + 13
         # self.obs_buf[:, goal_obs_start:goal_obs_start + 7] = self.goal_pose
         # self.obs_buf[:, goal_obs_start + 7:goal_obs_start + 11] = quat_mul(self.object_rot, quat_conjugate(self.goal_rot))
@@ -997,8 +1015,11 @@ class ShadowHandToaster(BaseTask):
         self.obs_buf[:, obj_obs_start:obj_obs_start + 7] = self.object_pose
         self.obs_buf[:, obj_obs_start + 7:obj_obs_start + 10] = self.object_linvel
         self.obs_buf[:, obj_obs_start + 10:obj_obs_start + 13] = self.vel_obs_scale * self.object_angvel
-        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.scissors_right_handle_pos
-        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.scissors_left_handle_pos
+        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.toaster_slot1_pos    
+        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.toaster_slot2_pos
+        self.obs_buf[:, obj_obs_start + 19:obj_obs_start + 22] = self.toast_right_handle_pos
+        self.obs_buf[:, obj_obs_start + 22:obj_obs_start + 25] = self.toast_left_handle_pos
+        self.obs_buf[:, obj_obs_start + 25:obj_obs_start + 28] = self.toast_bottom_pos
         # goal_obs_start = obj_obs_start + 13  # 157 = 144 + 13
         # self.obs_buf[:, goal_obs_start:goal_obs_start + 7] = self.goal_pose
         # self.obs_buf[:, goal_obs_start + 7:goal_obs_start + 11] = quat_mul(self.object_rot, quat_conjugate(self.goal_rot))
@@ -1152,7 +1173,7 @@ class ShadowHandToaster(BaseTask):
                                                         gymtorch.unwrap_tensor(self.prev_targets),
                                                         gymtorch.unwrap_tensor(all_hand_indices), len(all_hand_indices))  
 
-    
+        ###???
         all_indices = torch.unique(torch.cat([all_hand_indices,
                                               self.object_indices[env_ids],
                                               self.table_indices[env_ids]]).to(torch.int32))
@@ -1263,9 +1284,10 @@ class ShadowHandToaster(BaseTask):
             self.gym.refresh_rigid_body_state_tensor(self.sim)
 
             for i in range(self.num_envs):
-                self.add_debug_lines(self.envs[i], self.scissors_right_handle_pos[i], self.scissors_right_handle_rot[i])
-                self.add_debug_lines(self.envs[i], self.scissors_left_handle_pos[i], self.scissors_left_handle_rot[i])
-
+                self.add_debug_lines(self.envs[i], self.toast_right_handle_pos[i], self.toast_right_handle_rot[i])
+                self.add_debug_lines(self.envs[i], self.toast_left_handle_pos[i], self.toast_left_handle_rot[i])
+                #self.add_debug_lines(self.envs[i], self.toaster_slot1_pos[i], self.toaster_slot1_rot[i])
+                #self.add_debug_lines(self.envs[i], self.toaster_slot2_pos[i], self.toaster_slot2_rot[i])
                 # self.add_debug_lines(self.envs[i], self.right_hand_ff_pos[i], self.right_hand_ff_rot[i])
                 # self.add_debug_lines(self.envs[i], self.right_hand_mf_pos[i], self.right_hand_mf_rot[i])
                 # self.add_debug_lines(self.envs[i], self.right_hand_rf_pos[i], self.right_hand_rf_rot[i])
@@ -1364,7 +1386,7 @@ def depth_image_to_point_cloud_GPU(camera_tensor, camera_view_matrix_inv, camera
 @torch.jit.script
 def compute_hand_reward(
     rew_buf, reset_buf, reset_goal_buf, progress_buf, successes, consecutive_successes,
-    max_episode_length: float, object_pos, object_rot, target_pos, target_rot, scissors_right_handle_pos, scissors_left_handle_pos, object_dof_pos,
+    max_episode_length: float, object_pos, object_rot, target_pos, target_rot, toaster_slot1_pos, toaster_slot2_pos, toast_right_handle_pos, toast_left_handle_pos, toast_bottom_pos, object_dof_pos,
     left_hand_pos, right_hand_pos, right_hand_ff_pos, right_hand_mf_pos, right_hand_rf_pos, right_hand_lf_pos, right_hand_th_pos,
     left_hand_ff_pos, left_hand_mf_pos, left_hand_rf_pos, left_hand_lf_pos, left_hand_th_pos,
     dist_reward_scale: float, rot_reward_scale: float, rot_eps: float,
@@ -1439,15 +1461,16 @@ def compute_hand_reward(
     goal_dist = torch.norm(target_pos - object_pos, p=2, dim=-1)
     # goal_dist = target_pos[:, 2] - object_pos[:, 2]
 
-    right_hand_dist = torch.norm(scissors_right_handle_pos - right_hand_pos, p=2, dim=-1)
-    left_hand_dist = torch.norm(scissors_left_handle_pos - left_hand_pos, p=2, dim=-1)
+    right_hand_dist = torch.norm(toast_right_handle_pos - right_hand_pos, p=2, dim=-1)
+    left_hand_dist = torch.norm(toast_left_handle_pos - left_hand_pos, p=2, dim=-1)
 
-    right_hand_finger_dist = (torch.norm(scissors_right_handle_pos - right_hand_ff_pos, p=2, dim=-1) + torch.norm(scissors_right_handle_pos - right_hand_mf_pos, p=2, dim=-1)
-                            + torch.norm(scissors_right_handle_pos - right_hand_rf_pos, p=2, dim=-1) + torch.norm(scissors_right_handle_pos - right_hand_lf_pos, p=2, dim=-1) 
-                            + torch.norm(scissors_right_handle_pos - right_hand_th_pos, p=2, dim=-1))
-    left_hand_finger_dist = (torch.norm(scissors_left_handle_pos - left_hand_ff_pos, p=2, dim=-1) + torch.norm(scissors_left_handle_pos - left_hand_mf_pos, p=2, dim=-1)
-                            + torch.norm(scissors_left_handle_pos - left_hand_rf_pos, p=2, dim=-1) + torch.norm(scissors_left_handle_pos - left_hand_lf_pos, p=2, dim=-1) 
-                            + torch.norm(scissors_left_handle_pos - left_hand_th_pos, p=2, dim=-1))
+    right_hand_finger_dist = (torch.norm(toast_right_handle_pos - right_hand_ff_pos, p=2, dim=-1) + torch.norm(toast_right_handle_pos - right_hand_mf_pos, p=2, dim=-1)
+                            + torch.norm(toast_right_handle_pos - right_hand_rf_pos, p=2, dim=-1) + torch.norm(toast_right_handle_pos - right_hand_lf_pos, p=2, dim=-1) 
+                            + torch.norm(toast_right_handle_pos - right_hand_th_pos, p=2, dim=-1))
+    left_hand_finger_dist = (torch.norm(toast_left_handle_pos - left_hand_ff_pos, p=2, dim=-1) + torch.norm(toast_left_handle_pos - left_hand_mf_pos, p=2, dim=-1)
+                            + torch.norm(toast_left_handle_pos - left_hand_rf_pos, p=2, dim=-1) + torch.norm(toast_left_handle_pos - left_hand_lf_pos, p=2, dim=-1) 
+                            + torch.norm(toast_left_handle_pos - left_hand_th_pos, p=2, dim=-1))
+    toast_toaster_dist = torch.norm(toast_bottom_pos - toaster_slot1_pos, p=2, dim=-1)
     # Orientation alignment for the cube in hand and goal cube
     # quat_diff = quat_mul(object_rot, quat_conjugate(target_rot))
     # rot_dist = 2.0 * torch.asin(torch.clamp(torch.norm(quat_diff[:, 0:3], p=2, dim=-1), max=1.0))
@@ -1461,16 +1484,17 @@ def compute_hand_reward(
 
     # Total reward is: position distance + orientation alignment + action regularization + success bonus + fall penalty
     # reward = torch.exp(-0.05*(up_rew * dist_reward_scale)) + torch.exp(-0.05*(right_hand_dist_rew * dist_reward_scale)) + torch.exp(-0.05*(left_hand_dist_rew * dist_reward_scale))
-    up_rew = torch.zeros_like(right_hand_dist_rew)
-    up_rew = torch.where(right_hand_finger_dist < 0.7,
-                    torch.where(left_hand_finger_dist < 0.7,
-                        (0.59 + object_dof_pos[:, 0]) * 5, up_rew), up_rew)
+    #up_rew = torch.zeros_like(right_hand_dist_rew)
+    #up_rew = torch.where(right_hand_finger_dist < 0.7,
+    #                torch.where(left_hand_finger_dist < 0.7,
+    #                    (0.59 + object_dof_pos[:, 0]) * 5, up_rew), up_rew)
     # up_rew =  torch.where(right_hand_finger_dist <= 0.3, torch.norm(bottle_cap_up - bottle_pos, p=2, dim=-1) * 30, up_rew)
 
     # reward = torch.exp(-0.1*(right_hand_dist_rew * dist_reward_scale)) + torch.exp(-0.1*(left_hand_dist_rew * dist_reward_scale))
-    reward = 2 + up_rew - right_hand_dist_rew - left_hand_dist_rew
+    reward = 2 - toast_toaster_dist - right_hand_dist_rew - left_hand_dist_rew
 
-    resets = torch.where(up_rew < -0.5, torch.ones_like(reset_buf), reset_buf)
+    #resets = torch.where(up_rew < -0.5, torch.ones_like(reset_buf), reset_buf)
+    resets = torch.where(toast_toaster_dist >= 1.75, torch.ones_like(reset_buf), reset_buf)
     resets = torch.where(right_hand_finger_dist >= 1.75, torch.ones_like(resets), resets)
     resets = torch.where(left_hand_finger_dist >= 1.75, torch.ones_like(resets), resets)
     # Find out which envs hit the goal and update successes count
