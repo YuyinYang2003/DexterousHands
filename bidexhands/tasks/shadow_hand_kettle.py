@@ -442,7 +442,7 @@ class ShadowHandKettle(BaseTask):
         bucket_asset_file = "mjcf/bucket/100454/mobility.urdf"
         bucket_asset = self.gym.load_asset(self.sim, asset_root, bucket_asset_file, bucket_asset_options)
         bucket_pose = gymapi.Transform()
-        bucket_pose.p = gymapi.Vec3(0.0, -0.3, 0.5)
+        bucket_pose.p = gymapi.Vec3(0.0, -0.3, 1)
         bucket_pose.r = gymapi.Quat().from_euler_zyx(-0., 0, 0)
 
         self.num_bucket_bodies = self.gym.get_asset_rigid_body_count(bucket_asset)

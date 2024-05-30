@@ -389,10 +389,10 @@ class ShadowHandToaster(BaseTask):
         # object_asset_options.use_mesh_materials = True
         # object_asset_options.mesh_normal_mode = gymapi.COMPUTE_PER_VERTEX
         # object_asset_options.override_com = True
-        # object_asset_options.override_inertia = True
-        # object_asset_options.vhacd_enabled = True
-        # object_asset_options.vhacd_params = gymapi.VhacdParams()
-        # object_asset_options.vhacd_params.resolution = 100000
+        #object_asset_options.override_inertia = True
+        #object_asset_options.vhacd_enabled = True
+        #object_asset_options.vhacd_params = gymapi.VhacdParams()
+        #object_asset_options.vhacd_params.resolution = 100000
 
         object_asset = self.gym.load_asset(self.sim, asset_root, object_asset_file, object_asset_options)
 
@@ -417,7 +417,7 @@ class ShadowHandToaster(BaseTask):
         self.object_dof_upper_limits = to_torch(self.object_dof_upper_limits, device=self.device)
 
         # create table asset
-        table_dims = gymapi.Vec3(0.5, 1.0, 0.6)
+        table_dims = gymapi.Vec3(1.0, 1.0, 0.6)
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = True
         asset_options.flip_visual_attachments = True
@@ -428,15 +428,21 @@ class ShadowHandToaster(BaseTask):
         table_asset = self.gym.create_box(self.sim, table_dims.x, table_dims.y, table_dims.z, gymapi.AssetOptions())
         
         # create toast asset
-        toast_dims = gymapi.Vec3(0.01, 0.02, 0.01)
+        toast_dims = gymapi.Vec3(0.15, 0.15, 0.01)
         toast_asset_options = gymapi.AssetOptions()
-        toast_asset_options.fix_base_link = False
-        toast_asset_options.flip_visual_attachments = True
-        #asset_options.collapse_fixed_joints = True
-        toast_asset_options.disable_gravity = True
-        toast_asset_options.thickness = 0.001
+        toast_asset_options.density = 500
+        toast_asset_options.use_mesh_materials = True
+        toast_asset_options.mesh_normal_mode = gymapi.COMPUTE_PER_VERTEX
+        toast_asset_options.override_com = True
+        toast_asset_options.override_inertia = True
+        toast_asset_options.vhacd_enabled = True
+        toast_asset_options.vhacd_params = gymapi.VhacdParams()
+        toast_asset_options.vhacd_params.resolution = 10000
+        toast_asset_options.default_dof_drive_mode = gymapi.DOF_MODE_NONE
+        toast_asset_file = "mjcf/toast.urdf"
+        #toast_asset = self.gym.create_box(self.sim, toast_dims.x, toast_dims.y, toast_dims.z, gymapi.AssetOptions())
+        toast_asset = self.gym.load_asset(self.sim, asset_root, toast_asset_file, toast_asset_options)
 
-        toast_asset = self.gym.create_box(self.sim, table_dims.x, table_dims.y, toast_dims.z, gymapi.AssetOptions())
         #_asset = self.gym.load_asset(self.sim, asset_root, bucket_asset_file, bucket_asset_options)
         shadow_hand_start_pose = gymapi.Transform()
         shadow_hand_start_pose.p = gymapi.Vec3(0.55, 0.2, 0.8)
@@ -458,7 +464,8 @@ class ShadowHandToaster(BaseTask):
         if self.object_type == "pen":
             object_start_pose.p.z = shadow_hand_start_pose.p.z + 0.02
         toast_start_pose = gymapi.Transform()
-        toast_start_pose.p = gymapi.Vec3(0.0, 0., 0.5 * toast_dims.z)
+        ###check
+        toast_start_pose.p = gymapi.Vec3(0.3, 0., 1.2)
         toast_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 0)
         self.num_toast_bodies = self.gym.get_asset_rigid_body_count(toast_asset)
         self.num_toast_shapes = self.gym.get_asset_rigid_shape_count(toast_asset)
@@ -747,35 +754,35 @@ class ShadowHandToaster(BaseTask):
 
         self.toaster_slot1_pos = self.rigid_body_states[:, 26 * 2, 0:3]
         self.toaster_slot1_rot = self.rigid_body_states[:, 26 * 2, 3:7]
-        self.toaster_slot1_pos = self.toaster_slot1_pos + quat_apply(self.toaster_slot1_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.toaster_slot1_pos = self.toaster_slot1_pos + quat_apply(self.toaster_slot1_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
+        self.toaster_slot1_pos = self.toaster_slot1_pos + quat_apply(self.toaster_slot1_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.05)
+        self.toaster_slot1_pos = self.toaster_slot1_pos + quat_apply(self.toaster_slot1_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
         self.toaster_slot1_pos = self.toaster_slot1_pos + quat_apply(self.toaster_slot1_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.0)
 
         self.toaster_slot2_pos = self.rigid_body_states[:, 26 * 2, 0:3].clone()
         self.toaster_slot2_rot = self.rigid_body_states[:, 26 * 2, 3:7].clone()
-        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0.2)
-        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.07)
+        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.05)
+        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        self.toaster_slot2_pos = self.toaster_slot2_pos + quat_apply(self.toaster_slot2_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.0)
         
-        self.toast_right_handle_pos = self.rigid_body_states[:, 26 * 2 + 3, 0:3]
-        self.toast_right_handle_rot = self.rigid_body_states[:, 26 * 2 + 3, 3:7]
+        self.toast_right_handle_pos = self.rigid_body_states[:, 26 * 2+4 , 0:3]
+        self.toast_right_handle_rot = self.rigid_body_states[:, 26 * 2+4 , 3:7]
         #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.)
         #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.2)
         #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.1)
         #lvhonglan
-        self.toast_right_handle_pos = self.toast_right_handle_pos + quat_apply(self.toast_right_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.)
-        self.toast_right_handle_pos = self.toast_right_handle_pos + quat_apply(self.toast_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0.07)
-        self.toast_right_handle_pos = self.toast_right_handle_pos + quat_apply(self.toast_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.6)
+        self.toast_right_handle_pos = self.toast_right_handle_pos + quat_apply(self.toast_right_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.07)
+        self.toast_right_handle_pos = self.toast_right_handle_pos + quat_apply(self.toast_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0)
+        self.toast_right_handle_pos = self.toast_right_handle_pos + quat_apply(self.toast_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0)
 
-        
-        self.toast_left_handle_pos = self.rigid_body_states[:, 26 * 2 + 3, 0:3]
-        self.toast_left_handle_rot = self.rigid_body_states[:, 26 * 2 + 3, 3:7]
+    
+        self.toast_left_handle_pos = self.rigid_body_states[:, 26 * 2+4 , 0:3]
+        self.toast_left_handle_rot = self.rigid_body_states[:, 26 * 2+4 , 3:7]
         #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
         #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
         #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.1)
-        self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.07)
-        self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.22)
+        self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.07)
+        self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0)
+        self.toast_left_handle_pos = self.toast_left_handle_pos + quat_apply(self.toast_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.)
 
         self.toast_bottom_pos = self.rigid_body_states[:, 26 * 2 + 3, 0:3]
         self.toast_bottom_rot = self.rigid_body_states[:, 26 * 2 + 3, 3:7]
