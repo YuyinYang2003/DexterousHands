@@ -20,12 +20,10 @@ from isaacgym import gymtorch
 from isaacgym import gymapi
 
 
-class ShadowHandKettle(BaseTask):
+class ShadowHandToaster(BaseTask):
     """
-    This class corresponds to the PourWater task. This environment involves two hands and a bottle, 
-    we need to Hold the kettle with one hand and the bucket with the other hand, and pour the water 
-    from the kettle into the bucket. In the practice task in Isaac Gym, we use many small balls to 
-    simulate the water
+    This class corresponds to the Scissors task. This environment involves two hands and scissors, 
+    we need to use two hands to open the scissors
 
     Args:
         cfg (dict): The configuration file of the environment, which is the parameter defined in the
@@ -118,7 +116,8 @@ class ShadowHandKettle(BaseTask):
             "egg": "mjcf/open_ai_assets/hand/egg.xml",
             "pen": "mjcf/open_ai_assets/hand/pen.xml",
             # "pot": "mjcf/pot.xml",
-            "pot": "mjcf/kettle/mobility.urdf"
+            #"pot": "mjcf/scissors/10495/mobility.urdf"
+            "pot": "mjcf/toaster/mobility.urdf"
         }
 
         if "asset" in self.cfg["env"]:
@@ -141,7 +140,6 @@ class ShadowHandKettle(BaseTask):
             "point_cloud_for_distill": 417 + self.num_point_cloud_feature_dim * 3,
             "full_state": 417
         }
-
         self.num_hand_obs = 72 + 95 + 26 + 6
         self.up_axis = 'z'
 
@@ -222,6 +220,7 @@ class ShadowHandKettle(BaseTask):
 
         self.object_dof_state = self.dof_state.view(self.num_envs, -1, 2)[:, self.num_shadow_hand_dofs*2:self.num_shadow_hand_dofs*2 + self.num_object_dofs]
         self.object_dof_pos = self.object_dof_state[..., 0]
+        self.object_dof_vel = self.object_dof_state[..., 1]
 
         self.rigid_body_states = gymtorch.wrap_tensor(rigid_body_tensor).view(self.num_envs, -1, 13)
         self.num_bodies = self.rigid_body_states.shape[1]
@@ -257,7 +256,6 @@ class ShadowHandKettle(BaseTask):
         """
         Allocates which device will simulate and which device will render the scene. Defines the simulation type to be used
         """
-
         self.dt = self.sim_params.dt
         self.up_axis_idx = self.set_sim_params_up_axis(self.sim_params, self.up_axis)
 
@@ -269,6 +267,7 @@ class ShadowHandKettle(BaseTask):
         """
         Adds ground plane to simulation
         """
+
         plane_params = gymapi.PlaneParams()
         plane_params.normal = gymapi.Vec3(0.0, 0.0, 1.0)
         self.gym.add_ground(self.sim, plane_params)
@@ -380,16 +379,14 @@ class ShadowHandKettle(BaseTask):
         object_asset_options = gymapi.AssetOptions()
         object_asset_options.density = 500
         object_asset_options.fix_base_link = False
-        # object_asset_options.collapse_fixed_joints = True
-        # object_asset_options.disable_gravity = True
-        object_asset_options.use_mesh_materials = True
-        object_asset_options.mesh_normal_mode = gymapi.COMPUTE_PER_VERTEX
-        object_asset_options.override_com = True
-        object_asset_options.override_inertia = True
-        object_asset_options.vhacd_enabled = True
-        object_asset_options.vhacd_params = gymapi.VhacdParams()
-        object_asset_options.vhacd_params.resolution = 400000
         object_asset_options.default_dof_drive_mode = gymapi.DOF_MODE_NONE
+        # object_asset_options.use_mesh_materials = True
+        # object_asset_options.mesh_normal_mode = gymapi.COMPUTE_PER_VERTEX
+        # object_asset_options.override_com = True
+        # object_asset_options.override_inertia = True
+        # object_asset_options.vhacd_enabled = True
+        # object_asset_options.vhacd_params = gymapi.VhacdParams()
+        # object_asset_options.vhacd_params.resolution = 100000
 
         object_asset = self.gym.load_asset(self.sim, asset_root, object_asset_file, object_asset_options)
 
@@ -414,7 +411,7 @@ class ShadowHandKettle(BaseTask):
         self.object_dof_upper_limits = to_torch(self.object_dof_upper_limits, device=self.device)
 
         # create table asset
-        table_dims = gymapi.Vec3(0.5, 1.0, 0.4)
+        table_dims = gymapi.Vec3(0.5, 1.0, 0.6)
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = True
         asset_options.flip_visual_attachments = True
@@ -423,49 +420,41 @@ class ShadowHandKettle(BaseTask):
         asset_options.thickness = 0.001
 
         table_asset = self.gym.create_box(self.sim, table_dims.x, table_dims.y, table_dims.z, gymapi.AssetOptions())
+        
+        # create toast asset
+        toast_dims = gymapi.Vec3(0.01, 0.02, 0.01)
+        asset_options = gymapi.AssetOptions()
+        asset_options.fix_base_link = False
+        asset_options.flip_visual_attachments = True
+        #asset_options.collapse_fixed_joints = True
+        asset_options.disable_gravity = True
+        asset_options.thickness = 0.001
 
-        bucket_asset_options = gymapi.AssetOptions()
-        bucket_asset_options.density = 500
-        object_asset_options.fix_base_link = False
-        # object_asset_options.collapse_fixed_joints = True
-        object_asset_options.disable_gravity = False
-        bucket_asset_options.use_mesh_materials = True
-        bucket_asset_options.mesh_normal_mode = gymapi.COMPUTE_PER_VERTEX
-        bucket_asset_options.override_com = True
-        bucket_asset_options.override_inertia = True
-        bucket_asset_options.vhacd_enabled = True
-        bucket_asset_options.vhacd_params = gymapi.VhacdParams()
-        bucket_asset_options.vhacd_params.resolution = 10000
-        bucket_asset_options.default_dof_drive_mode = gymapi.DOF_MODE_NONE
-
-        bucket_asset_file = "mjcf/bucket/100454/mobility.urdf"
-        bucket_asset = self.gym.load_asset(self.sim, asset_root, bucket_asset_file, bucket_asset_options)
-        bucket_pose = gymapi.Transform()
-        bucket_pose.p = gymapi.Vec3(0.0, -0.3, 0.5)
-        bucket_pose.r = gymapi.Quat().from_euler_zyx(-0., 0, 0)
-
-        self.num_bucket_bodies = self.gym.get_asset_rigid_body_count(bucket_asset)
-        self.num_bucket_shapes = self.gym.get_asset_rigid_shape_count(bucket_asset)
+        toast_asset = self.gym.create_box(self.sim, table_dims.x, table_dims.y, toast_dims.z, gymapi.AssetOptions())
 
         shadow_hand_start_pose = gymapi.Transform()
-        shadow_hand_start_pose.p = gymapi.Vec3(0.55, 0.2, 0.6)
-        shadow_hand_start_pose.r = gymapi.Quat().from_euler_zyx(3.14159, 1.57, 1.57)
+        shadow_hand_start_pose.p = gymapi.Vec3(0.55, 0.2, 0.8)
+        shadow_hand_start_pose.r = gymapi.Quat().from_euler_zyx(3.14159, 0, 1.57)
 
         shadow_another_hand_start_pose = gymapi.Transform()
-        shadow_another_hand_start_pose.p = gymapi.Vec3(0.55, -0.2, 0.6)
-        shadow_another_hand_start_pose.r = gymapi.Quat().from_euler_zyx(3.14159, -1.57, 1.57)
+        shadow_another_hand_start_pose.p = gymapi.Vec3(0.55, -0.2, 0.8)
+        shadow_another_hand_start_pose.r = gymapi.Quat().from_euler_zyx(3.14159, 0, 1.57)
 
         object_start_pose = gymapi.Transform()
-        object_start_pose.p = gymapi.Vec3(0.0, 0., 0.5)
-        object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0.0, 1.57)
-        pose_dx, pose_dy, pose_dz = -1.0, 0.0, -0.0
+        object_start_pose.p = gymapi.Vec3(0.0, 0., 0.6)
+        object_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 1.57)
+        pose_dx, pose_dy, pose_dz = 0.0, 0.0, 0.0
 
-        # object_start_pose.p.x = shadow_hand_start_pose.p.x + pose_dx
-        # object_start_pose.p.y = shadow_hand_start_pose.p.y + pose_dy
-        # object_start_pose.p.z = shadow_hand_start_pose.p.z + pose_dz
+        #object_start_pose.p.x = shadow_hand_start_pose.p.x + pose_dx
+        #object_start_pose.p.y = shadow_hand_start_pose.p.y + pose_dy
+        #object_start_pose.p.z = shadow_hand_start_pose.p.z + pose_dz
 
         if self.object_type == "pen":
             object_start_pose.p.z = shadow_hand_start_pose.p.z + 0.02
+        toast_start_pose = gymapi.Transform()
+        toast_start_pose.p = gymapi.Vec3(0.0, 0., 0.5 * toast_dims.z)
+        toast_start_pose.r = gymapi.Quat().from_euler_zyx(0, 0, 0)
+        pose_dx, pose_dy, pose_dz = 0.0, 0.0, 0.0
 
         self.goal_displacement = gymapi.Vec3(-0., 0.0, 10)
         self.goal_displacement_tensor = to_torch(
@@ -480,8 +469,8 @@ class ShadowHandKettle(BaseTask):
         table_pose.r = gymapi.Quat().from_euler_zyx(-0., 0, 0)
 
         # compute aggregate size
-        max_agg_bodies = self.num_shadow_hand_bodies * 2 + 2 * self.num_object_bodies + self.num_bucket_bodies + 4*4*4
-        max_agg_shapes = self.num_shadow_hand_shapes * 2 + 2 * self.num_object_shapes + self.num_bucket_shapes + 4*4*4
+        max_agg_bodies = self.num_shadow_hand_bodies * 2 + 2 * self.num_object_bodies + 1
+        max_agg_shapes = self.num_shadow_hand_shapes * 2 + 2 * self.num_object_shapes + 1
 
         self.shadow_hands = []
         self.envs = []
@@ -493,10 +482,12 @@ class ShadowHandKettle(BaseTask):
         self.another_hand_indices = []
         self.fingertip_indices = []
         self.object_indices = []
+        self.toast_indices = []
         self.goal_object_indices = []
         self.table_indices = []
         self.bucket_indices = []
         self.ball_indices = []
+
 
         self.fingertip_handles = [self.gym.find_asset_rigid_body_index(shadow_hand_asset, name) for name in self.fingertips]
         self.fingertip_another_handles = [self.gym.find_asset_rigid_body_index(shadow_hand_another_asset, name) for name in self.a_fingertips]
@@ -507,7 +498,7 @@ class ShadowHandKettle(BaseTask):
             self.gym.create_asset_force_sensor(shadow_hand_asset, ft_handle, sensor_pose)
         for ft_a_handle in self.fingertip_another_handles:
             self.gym.create_asset_force_sensor(shadow_hand_another_asset, ft_a_handle, sensor_pose)
-        
+
         if self.obs_type in ["point_cloud"]:
             self.cameras = []
             self.camera_tensors = []
@@ -534,7 +525,6 @@ class ShadowHandKettle(BaseTask):
                 self.o3d_pc = o3d.geometry.PointCloud()
             else :
                 self.pointCloudVisualizer = None
-
         for i in range(self.num_envs):
             # create env instance
             env_ptr = self.gym.create_env(
@@ -546,8 +536,8 @@ class ShadowHandKettle(BaseTask):
 
 
             # add hand - collision filter = -1 to use asset collision filters set in mjcf loader
-            shadow_hand_actor = self.gym.create_actor(env_ptr, shadow_hand_asset, shadow_hand_start_pose, "hand", i, -1, 0)
-            shadow_hand_another_actor = self.gym.create_actor(env_ptr, shadow_hand_another_asset, shadow_another_hand_start_pose, "another_hand", i, -1, 0)
+            shadow_hand_actor = self.gym.create_actor(env_ptr, shadow_hand_asset, shadow_hand_start_pose, "hand", i, 0, 0)
+            shadow_hand_another_actor = self.gym.create_actor(env_ptr, shadow_hand_another_asset, shadow_another_hand_start_pose, "another_hand", i, 0, 0)
             
             self.hand_start_states.append([shadow_hand_start_pose.p.x, shadow_hand_start_pose.p.y, shadow_hand_start_pose.p.z,
                                            shadow_hand_start_pose.r.x, shadow_hand_start_pose.r.y, shadow_hand_start_pose.r.z, shadow_hand_start_pose.r.w,
@@ -593,26 +583,37 @@ class ShadowHandKettle(BaseTask):
             self.object_init_state.append([object_start_pose.p.x, object_start_pose.p.y, object_start_pose.p.z,
                                            object_start_pose.r.x, object_start_pose.r.y, object_start_pose.r.z, object_start_pose.r.w,
                                            0, 0, 0, 0, 0, 0])
+            self.gym.set_actor_dof_properties(env_ptr, object_handle, object_dof_props)
             object_idx = self.gym.get_actor_index(env_ptr, object_handle, gymapi.DOMAIN_SIM)
             self.object_indices.append(object_idx)
-            # self.gym.set_actor_scale(env_ptr, object_handle, 0.3)
+            #self.gym.set_actor_scale(env_ptr, object_handle, 0.2)
 
-            bucket_handle = self.gym.create_actor(env_ptr, bucket_asset, bucket_pose, "bucket", i, -1, 0)
-            bucket_idx = self.gym.get_actor_index(env_ptr, bucket_handle, gymapi.DOMAIN_SIM)
-            self.bucket_indices.append(bucket_idx)
+            # add toast
+            toast_handle = self.gym.create_actor(env_ptr, toast_asset, toast_pose, "toast", i, 0, 0)
+            #self.gym.set_rigid_body_texture(env_ptr, table_handle, 0, gymapi.MESH_VISUAL, table_texture_handle)
+            toast_idx = self.gym.get_actor_index(env_ptr, toast_handle, gymapi.DOMAIN_SIM)
+            self.toast_indices.append(toast_idx)
 
             # add goal object
             goal_handle = self.gym.create_actor(env_ptr, goal_asset, goal_start_pose, "goal_object", i + self.num_envs, 0, 0)
             goal_object_idx = self.gym.get_actor_index(env_ptr, goal_handle, gymapi.DOMAIN_SIM)
             self.goal_object_indices.append(goal_object_idx)
-            # self.gym.set_actor_scale(env_ptr, goal_handle, 0.3)
+            #self.gym.set_actor_scale(env_ptr, goal_handle, 0.2)
 
             # add table
-            table_handle = self.gym.create_actor(env_ptr, table_asset, table_pose, "table", i, -1, 0)
+            table_handle = self.gym.create_actor(env_ptr, table_asset, table_pose, "table", i, 0, 0)
             self.gym.set_rigid_body_texture(env_ptr, table_handle, 0, gymapi.MESH_VISUAL, table_texture_handle)
             table_idx = self.gym.get_actor_index(env_ptr, table_handle, gymapi.DOMAIN_SIM)
             self.table_indices.append(table_idx)
-
+            
+            # object_dof_props = self.gym.get_actor_dof_properties(env_ptr, object_handle)
+            # for object_dof_prop in object_dof_props:
+            #     object_dof_prop[4] = 1
+            #     object_dof_prop[5] = 0
+            #     object_dof_prop[6] = 0
+            #     object_dof_prop[7] = 0
+            # self.gym.set_actor_dof_properties(env_ptr, object_handle, object_dof_props)
+            
             #set friction
             another_hand_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, shadow_hand_another_actor)
             object_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, object_handle)
@@ -620,39 +621,6 @@ class ShadowHandKettle(BaseTask):
             object_shape_props[0].friction = 1
             self.gym.set_actor_rigid_shape_properties(env_ptr, shadow_hand_another_actor, another_hand_shape_props)
             self.gym.set_actor_rigid_shape_properties(env_ptr, object_handle, object_shape_props)
-
-            # create ball pyramid
-
-            # generate random bright color
-            ball_indices = []
-            c = 0.5 + 0.5 * np.random.random(3)
-            color = gymapi.Vec3(c[0], c[1], c[2])
-
-            pose = gymapi.Transform()
-            pose.r = gymapi.Quat(0, 0, 0, 1)
-            n = 4
-            radius = 0.005
-            ball_spacing = 1 * radius
-            min_coord = -0.5 * (n - 1) * ball_spacing
-            y = min_coord
-            while n > 0:
-                z = min_coord
-                for j in range(n):
-                    x = min_coord
-                    for k in range(n):
-                        pose.p = gymapi.Vec3(x, y, z + 0.54)
-
-                        ball_handle = self.gym.create_actor(env_ptr, ball_asset, pose, "ball", i, 0, 0)
-                        self.gym.set_rigid_body_color(env_ptr, ball_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
-                        ball_idx = self.gym.get_actor_index(env_ptr, ball_handle, gymapi.DOMAIN_SIM)
-                        ball_indices.append(ball_idx)
-
-                        x += ball_spacing
-                    z += ball_spacing
-                y += ball_spacing
-                n -= 1
-                min_coord = -0.5 * (n - 1) * ball_spacing
-            self.ball_indices.append(ball_indices)
             
             if self.object_type != "block":
                 self.gym.set_rigid_body_color(
@@ -703,28 +671,28 @@ class ShadowHandKettle(BaseTask):
         self.table_indices = to_torch(self.table_indices, dtype=torch.long, device=self.device)
         self.bucket_indices = to_torch(self.bucket_indices, dtype=torch.long, device=self.device)
         self.ball_indices = to_torch(self.ball_indices, dtype=torch.long, device=self.device)
+        self.toast_indices = to_torch(self.toast_indices, dtype=torch.long, device=self.device)
+        ### start here
 
     def compute_reward(self, actions):
         """
         Compute the reward of all environment. The core function is compute_hand_reward(
             self.rew_buf, self.reset_buf, self.reset_goal_buf, self.progress_buf, self.successes, self.consecutive_successes,
-            self.max_episode_length, self.object_pos, self.object_rot, self.goal_pos, self.goal_rot, self.kettle_handle_pos, self.bucket_handle_pos, self.kettle_spout_pos,
+            self.max_episode_length, self.object_pos, self.object_rot, self.goal_pos, self.goal_rot, self.scissors_right_handle_pos, self.scissors_left_handle_pos, self.object_dof_pos,
             self.left_hand_pos, self.right_hand_pos, self.right_hand_ff_pos, self.right_hand_mf_pos, self.right_hand_rf_pos, self.right_hand_lf_pos, self.right_hand_th_pos, 
             self.left_hand_ff_pos, self.left_hand_mf_pos, self.left_hand_rf_pos, self.left_hand_lf_pos, self.left_hand_th_pos, 
             self.dist_reward_scale, self.rot_reward_scale, self.rot_eps, self.actions, self.action_penalty_scale,
             self.success_tolerance, self.reach_goal_bonus, self.fall_dist, self.fall_penalty,
             self.max_consecutive_successes, self.av_factor, (self.object_type == "pen")
         )
-
         , which we will introduce in detail there
 
         Args:
             actions (tensor): Actions of agents in the all environment 
         """
-
         self.rew_buf[:], self.reset_buf[:], self.reset_goal_buf[:], self.progress_buf[:], self.successes[:], self.consecutive_successes[:] = compute_hand_reward(
             self.rew_buf, self.reset_buf, self.reset_goal_buf, self.progress_buf, self.successes, self.consecutive_successes,
-            self.max_episode_length, self.object_pos, self.object_rot, self.goal_pos, self.goal_rot, self.kettle_handle_pos, self.bucket_handle_pos, self.kettle_spout_pos,
+            self.max_episode_length, self.object_pos, self.object_rot, self.goal_pos, self.goal_rot, self.scissors_right_handle_pos, self.scissors_left_handle_pos, self.object_dof_pos,
             self.left_hand_pos, self.right_hand_pos, self.right_hand_ff_pos, self.right_hand_mf_pos, self.right_hand_rf_pos, self.right_hand_lf_pos, self.right_hand_th_pos, 
             self.left_hand_ff_pos, self.left_hand_mf_pos, self.left_hand_rf_pos, self.left_hand_lf_pos, self.left_hand_th_pos, 
             self.dist_reward_scale, self.rot_reward_scale, self.rot_eps, self.actions, self.action_penalty_scale,
@@ -768,23 +736,25 @@ class ShadowHandKettle(BaseTask):
         self.object_linvel = self.root_state_tensor[self.object_indices, 7:10]
         self.object_angvel = self.root_state_tensor[self.object_indices, 10:13]
 
-        self.kettle_handle_pos = self.rigid_body_states[:, 26 * 2, 0:3]
-        self.kettle_handle_rot = self.rigid_body_states[:, 26 * 2, 3:7]
-        self.kettle_handle_pos = self.kettle_handle_pos + quat_apply(self.kettle_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.kettle_handle_pos = self.kettle_handle_pos + quat_apply(self.kettle_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
-        self.kettle_handle_pos = self.kettle_handle_pos + quat_apply(self.kettle_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        self.scissors_right_handle_pos = self.rigid_body_states[:, 26 * 2 + 2, 0:3]
+        self.scissors_right_handle_rot = self.rigid_body_states[:, 26 * 2 + 2, 3:7]
+        #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.)
+        #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.2)
+        #self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.1)
+        #lvhonglan
+        self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.)
+        self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0.07)
+        self.scissors_right_handle_pos = self.scissors_right_handle_pos + quat_apply(self.scissors_right_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.6)
 
-        self.kettle_spout_pos = self.rigid_body_states[:, 26 * 2, 0:3].clone()
-        self.kettle_spout_rot = self.rigid_body_states[:, 26 * 2, 3:7].clone()
-        self.kettle_spout_pos = self.kettle_spout_pos + quat_apply(self.kettle_spout_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.kettle_spout_pos = self.kettle_spout_pos + quat_apply(self.kettle_spout_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * -0.2)
-        self.kettle_spout_pos = self.kettle_spout_pos + quat_apply(self.kettle_spout_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.07)
-
-        self.bucket_handle_pos = self.rigid_body_states[:, 26 * 2 + 3, 0:3]
-        self.bucket_handle_rot = self.rigid_body_states[:, 26 * 2 + 3, 3:7]
-        self.bucket_handle_pos = self.bucket_handle_pos + quat_apply(self.bucket_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.bucket_handle_pos = self.bucket_handle_pos + quat_apply(self.bucket_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
-        self.bucket_handle_pos = self.bucket_handle_pos + quat_apply(self.bucket_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.1)
+        
+        self.scissors_left_handle_pos = self.rigid_body_states[:, 26 * 2 + 1, 0:3]
+        self.scissors_left_handle_rot = self.rigid_body_states[:, 26 * 2 + 1, 3:7]
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.15)
+        #self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.1)
+        self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.0)
+        self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.07)
+        self.scissors_left_handle_pos = self.scissors_left_handle_pos + quat_apply(self.scissors_left_handle_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * -0.22)
 
         self.left_hand_pos = self.rigid_body_states[:, 3 + 26, 0:3]
         self.left_hand_rot = self.rigid_body_states[:, 3 + 26, 3:7]
@@ -871,13 +841,13 @@ class ShadowHandKettle(BaseTask):
         366 - 368	left shadow hand base position
         369 - 371	left shadow hand base rotation
         372 - 397	left shadow hand actions
-        398 - 404	kettle pose
-        405 - 407	kettle linear velocity
-        408 - 410	kettle angle velocity
+        398 - 404	object pose
+        405 - 407	object linear velocity
+        408 - 410	object angle velocity
         411 - 417	goal pose
         418 - 421	goal rot - object rot
-        422 - 424	kettle handle position
-        425 - 427	bucket position
+        422 - 424	scissors right handle position
+        425 - 427	scissors left handle position
         """
         num_ft_states = 13 * int(self.num_fingertips / 2)  # 65
         num_ft_force_torques = 6 * int(self.num_fingertips / 2)  # 30
@@ -926,14 +896,13 @@ class ShadowHandKettle(BaseTask):
         self.obs_buf[:, obj_obs_start:obj_obs_start + 7] = self.object_pose
         self.obs_buf[:, obj_obs_start + 7:obj_obs_start + 10] = self.object_linvel
         self.obs_buf[:, obj_obs_start + 10:obj_obs_start + 13] = self.vel_obs_scale * self.object_angvel
-        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.kettle_handle_pos
-        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.bucket_handle_pos
+        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.scissors_right_handle_pos
+        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.scissors_left_handle_pos
         # goal_obs_start = obj_obs_start + 13  # 157 = 144 + 13
         # self.obs_buf[:, goal_obs_start:goal_obs_start + 7] = self.goal_pose
-        # self.obs_buf[:, goal_obs_start + 7:goal_obs_start + 11] = quat_mul(self.object_rot, quat_conjugate(self.goal_rot))    def compute_full_state(self, asymm_obs=False):
+        # self.obs_buf[:, goal_obs_start + 7:goal_obs_start + 11] = quat_mul(self.object_rot, quat_conjugate(self.goal_rot))
 
     def compute_point_cloud_observation(self, collect_demonstration=False):
-
         """
         Compute the observations of all environment. The observation is composed of three parts: 
         the state values of the left and right hands, and the information of objects and target. 
@@ -958,13 +927,13 @@ class ShadowHandKettle(BaseTask):
         366 - 368	left shadow hand base position
         369 - 371	left shadow hand base rotation
         372 - 397	left shadow hand actions
-        398 - 404	kettle pose
-        405 - 407	kettle linear velocity
-        408 - 410	kettle angle velocity
+        398 - 404	object pose
+        405 - 407	object linear velocity
+        408 - 410	object angle velocity
         411 - 417	goal pose
         418 - 421	goal rot - object rot
-        422 - 424	kettle handle position
-        425 - 427	bucket position
+        422 - 424	scissors right handle position
+        425 - 427	scissors left handle position
         """
         num_ft_states = 13 * int(self.num_fingertips / 2)  # 65
         num_ft_force_torques = 6 * int(self.num_fingertips / 2)  # 30
@@ -1013,12 +982,11 @@ class ShadowHandKettle(BaseTask):
         self.obs_buf[:, obj_obs_start:obj_obs_start + 7] = self.object_pose
         self.obs_buf[:, obj_obs_start + 7:obj_obs_start + 10] = self.object_linvel
         self.obs_buf[:, obj_obs_start + 10:obj_obs_start + 13] = self.vel_obs_scale * self.object_angvel
-        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.kettle_handle_pos
-        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.bucket_handle_pos
+        self.obs_buf[:, obj_obs_start + 13:obj_obs_start + 16] = self.scissors_right_handle_pos
+        self.obs_buf[:, obj_obs_start + 16:obj_obs_start + 19] = self.scissors_left_handle_pos
         # goal_obs_start = obj_obs_start + 13  # 157 = 144 + 13
         # self.obs_buf[:, goal_obs_start:goal_obs_start + 7] = self.goal_pose
         # self.obs_buf[:, goal_obs_start + 7:goal_obs_start + 11] = quat_mul(self.object_rot, quat_conjugate(self.goal_rot))
-
         point_clouds = torch.zeros((self.num_envs, self.pointCloudDownsampleNum, 3), device=self.device)
         
         if self.camera_debug:
@@ -1057,7 +1025,6 @@ class ShadowHandKettle(BaseTask):
 
         point_clouds_start = obj_obs_start + 19
         self.obs_buf[:, point_clouds_start:].copy_(point_clouds.view(self.num_envs, self.pointCloudDownsampleNum * 3))
-
 
     def reset_target_pose(self, env_ids, apply_reset=False):
         """
@@ -1142,6 +1109,8 @@ class ShadowHandKettle(BaseTask):
 
         self.shadow_hand_dof_pos[env_ids, :] = pos
         self.shadow_hand_another_dof_pos[env_ids, :] = pos
+        self.object_dof_pos[env_ids, :] = to_torch([-0.59], device=self.device)
+        self.object_dof_vel[env_ids, :] = to_torch([0], device=self.device)
 
         self.shadow_hand_dof_vel[env_ids, :] = self.shadow_hand_dof_default_vel + \
             self.reset_dof_vel_noise * rand_floats[:, 5+self.num_shadow_hand_dofs:5+self.num_shadow_hand_dofs*2]   
@@ -1154,12 +1123,15 @@ class ShadowHandKettle(BaseTask):
 
         self.prev_targets[env_ids, self.num_shadow_hand_dofs:self.num_shadow_hand_dofs*2] = pos
         self.cur_targets[env_ids, self.num_shadow_hand_dofs:self.num_shadow_hand_dofs*2] = pos
+        self.prev_targets[env_ids, self.num_shadow_hand_dofs*2:self.num_shadow_hand_dofs*2 + 2] = to_torch([-0.59], device=self.device)
+        self.cur_targets[env_ids, self.num_shadow_hand_dofs*2:self.num_shadow_hand_dofs*2 + 2] = to_torch([-0.59], device=self.device)
 
         hand_indices = self.hand_indices[env_ids].to(torch.int32)
         another_hand_indices = self.another_hand_indices[env_ids].to(torch.int32)
 
         all_hand_indices = torch.unique(torch.cat([hand_indices,
-                                                 another_hand_indices]).to(torch.int32))
+                                                 another_hand_indices,
+                                                 self.object_indices[env_ids]]).to(torch.int32))
 
         self.gym.set_dof_position_target_tensor_indexed(self.sim,
                                                         gymtorch.unwrap_tensor(self.prev_targets),
@@ -1168,8 +1140,6 @@ class ShadowHandKettle(BaseTask):
     
         all_indices = torch.unique(torch.cat([all_hand_indices,
                                               self.object_indices[env_ids],
-                                              self.ball_indices[env_ids].view(-1),
-                                              self.bucket_indices[env_ids],
                                               self.table_indices[env_ids]]).to(torch.int32))
 
         self.hand_positions[all_indices.to(torch.long), :] = self.saved_root_tensor[all_indices.to(torch.long), 0:3]
@@ -1239,8 +1209,7 @@ class ShadowHandKettle(BaseTask):
             self.cur_targets[:, self.actuated_dof_indices + 24] = tensor_clamp(self.cur_targets[:, self.actuated_dof_indices + 24],
                                                                           self.shadow_hand_dof_lower_limits[self.actuated_dof_indices], self.shadow_hand_dof_upper_limits[self.actuated_dof_indices])
             # self.cur_targets[:, 49] = scale(self.actions[:, 0],
-            #                                 self.object_dof_lower_limits[1], self.object_dof_upper_limits[1])
-            # angle_offsets = self.actions[:, 26:32] * self.dt * self.orientation_scale
+            #                                 self.object_dof_lower_limits[0], self.object_dof_upper_limits[0])
 
             self.apply_forces[:, 1, :] = actions[:, 0:3] * self.dt * self.transition_scale * 100000
             self.apply_forces[:, 1 + 26, :] = actions[:, 26:29] * self.dt * self.transition_scale * 100000
@@ -1254,11 +1223,12 @@ class ShadowHandKettle(BaseTask):
 
         # self.prev_targets[:, 49] = self.cur_targets[:, 49]
         # self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(self.cur_targets))
-        all_hand_indices = torch.unique(torch.cat([self.hand_indices,
-                                            self.another_hand_indices]).to(torch.int32))
-        self.gym.set_dof_position_target_tensor_indexed(self.sim,
-                                                gymtorch.unwrap_tensor(self.prev_targets),
-                                                gymtorch.unwrap_tensor(all_hand_indices), len(all_hand_indices))  
+        # all_hand_indices = torch.unique(torch.cat([self.hand_indices,
+        #                                     self.another_hand_indices]).to(torch.int32))
+        # self.gym.set_dof_position_target_tensor_indexed(self.sim,
+        #                                         gymtorch.unwrap_tensor(self.prev_targets),
+        #                                         gymtorch.unwrap_tensor(all_hand_indices), len(all_hand_indices))
+        self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(self.cur_targets))  
 
     def post_physics_step(self):
         """
@@ -1278,9 +1248,9 @@ class ShadowHandKettle(BaseTask):
             self.gym.refresh_rigid_body_state_tensor(self.sim)
 
             for i in range(self.num_envs):
-                self.add_debug_lines(self.envs[i], self.kettle_handle_pos[i], self.kettle_handle_rot[i])
-                self.add_debug_lines(self.envs[i], self.bucket_handle_pos[i], self.bucket_handle_rot[i])
-                self.add_debug_lines(self.envs[i], self.kettle_spout_pos[i], self.kettle_spout_rot[i])
+                self.add_debug_lines(self.envs[i], self.scissors_right_handle_pos[i], self.scissors_right_handle_rot[i])
+                self.add_debug_lines(self.envs[i], self.scissors_left_handle_pos[i], self.scissors_left_handle_rot[i])
+
                 # self.add_debug_lines(self.envs[i], self.right_hand_ff_pos[i], self.right_hand_ff_rot[i])
                 # self.add_debug_lines(self.envs[i], self.right_hand_mf_pos[i], self.right_hand_mf_rot[i])
                 # self.add_debug_lines(self.envs[i], self.right_hand_rf_pos[i], self.right_hand_rf_rot[i])
@@ -1379,7 +1349,7 @@ def depth_image_to_point_cloud_GPU(camera_tensor, camera_view_matrix_inv, camera
 @torch.jit.script
 def compute_hand_reward(
     rew_buf, reset_buf, reset_goal_buf, progress_buf, successes, consecutive_successes,
-    max_episode_length: float, object_pos, object_rot, target_pos, target_rot, kettle_handle_pos, bucket_handle_pos, kettle_spout_pos,
+    max_episode_length: float, object_pos, object_rot, target_pos, target_rot, scissors_right_handle_pos, scissors_left_handle_pos, object_dof_pos,
     left_hand_pos, right_hand_pos, right_hand_ff_pos, right_hand_mf_pos, right_hand_rf_pos, right_hand_lf_pos, right_hand_th_pos,
     left_hand_ff_pos, left_hand_mf_pos, left_hand_rf_pos, left_hand_lf_pos, left_hand_th_pos,
     dist_reward_scale: float, rot_reward_scale: float, rot_eps: float,
@@ -1413,14 +1383,12 @@ def compute_hand_reward(
 
         target_rot (tensor): The rotate of the target
 
-        kettle_handle_pos (tensor): The position of the kettle
+        scissors_left_handle_pos (tensor): The position of the left handle of the scissors
 
-        bucket_handle_pos (tensor): The position of the bucket
-
-        kettle_spout_pos (tensor): The position of the kettle's spout
+        scissors_right_handle_pos (tensor): The position of the right handle of the scissors
 
         left_hand_pos, right_hand_pos (tensor): The position of the bimanual hands
-        
+
         right_hand_ff_pos, right_hand_mf_pos, right_hand_rf_pos, right_hand_lf_pos, right_hand_th_pos (tensor): The position of the five fingers 
             of the right hand
 
@@ -1456,15 +1424,15 @@ def compute_hand_reward(
     goal_dist = torch.norm(target_pos - object_pos, p=2, dim=-1)
     # goal_dist = target_pos[:, 2] - object_pos[:, 2]
 
-    right_hand_dist = torch.norm(kettle_handle_pos - right_hand_pos, p=2, dim=-1)
-    left_hand_dist = torch.norm(bucket_handle_pos - left_hand_pos, p=2, dim=-1)
+    right_hand_dist = torch.norm(scissors_right_handle_pos - right_hand_pos, p=2, dim=-1)
+    left_hand_dist = torch.norm(scissors_left_handle_pos - left_hand_pos, p=2, dim=-1)
 
-    right_hand_finger_dist = (torch.norm(kettle_handle_pos - right_hand_ff_pos, p=2, dim=-1) + torch.norm(kettle_handle_pos - right_hand_mf_pos, p=2, dim=-1)
-                            + torch.norm(kettle_handle_pos - right_hand_rf_pos, p=2, dim=-1) + torch.norm(kettle_handle_pos - right_hand_lf_pos, p=2, dim=-1) 
-                            + torch.norm(kettle_handle_pos - right_hand_th_pos, p=2, dim=-1))
-    left_hand_finger_dist = (torch.norm(bucket_handle_pos - left_hand_ff_pos, p=2, dim=-1) + torch.norm(bucket_handle_pos - left_hand_mf_pos, p=2, dim=-1)
-                            + torch.norm(bucket_handle_pos - left_hand_rf_pos, p=2, dim=-1) + torch.norm(bucket_handle_pos - left_hand_lf_pos, p=2, dim=-1) 
-                            + torch.norm(bucket_handle_pos - left_hand_th_pos, p=2, dim=-1))
+    right_hand_finger_dist = (torch.norm(scissors_right_handle_pos - right_hand_ff_pos, p=2, dim=-1) + torch.norm(scissors_right_handle_pos - right_hand_mf_pos, p=2, dim=-1)
+                            + torch.norm(scissors_right_handle_pos - right_hand_rf_pos, p=2, dim=-1) + torch.norm(scissors_right_handle_pos - right_hand_lf_pos, p=2, dim=-1) 
+                            + torch.norm(scissors_right_handle_pos - right_hand_th_pos, p=2, dim=-1))
+    left_hand_finger_dist = (torch.norm(scissors_left_handle_pos - left_hand_ff_pos, p=2, dim=-1) + torch.norm(scissors_left_handle_pos - left_hand_mf_pos, p=2, dim=-1)
+                            + torch.norm(scissors_left_handle_pos - left_hand_rf_pos, p=2, dim=-1) + torch.norm(scissors_left_handle_pos - left_hand_lf_pos, p=2, dim=-1) 
+                            + torch.norm(scissors_left_handle_pos - left_hand_th_pos, p=2, dim=-1))
     # Orientation alignment for the cube in hand and goal cube
     # quat_diff = quat_mul(object_rot, quat_conjugate(target_rot))
     # rot_dist = 2.0 * torch.asin(torch.clamp(torch.norm(quat_diff[:, 0:3], p=2, dim=-1), max=1.0))
@@ -1481,22 +1449,20 @@ def compute_hand_reward(
     up_rew = torch.zeros_like(right_hand_dist_rew)
     up_rew = torch.where(right_hand_finger_dist < 0.7,
                     torch.where(left_hand_finger_dist < 0.7,
-                                    0.5 - torch.norm(bucket_handle_pos - kettle_spout_pos, p=2, dim=-1) * 2, up_rew), up_rew)
-
+                        (0.59 + object_dof_pos[:, 0]) * 5, up_rew), up_rew)
     # up_rew =  torch.where(right_hand_finger_dist <= 0.3, torch.norm(bottle_cap_up - bottle_pos, p=2, dim=-1) * 30, up_rew)
 
     # reward = torch.exp(-0.1*(right_hand_dist_rew * dist_reward_scale)) + torch.exp(-0.1*(left_hand_dist_rew * dist_reward_scale))
-    reward = 1 + up_rew - right_hand_dist_rew - left_hand_dist_rew
+    reward = 2 + up_rew - right_hand_dist_rew - left_hand_dist_rew
 
-    resets = torch.where(bucket_handle_pos[:, 2] <= 0.2, torch.ones_like(reset_buf), reset_buf)
-    # resets = torch.where(right_hand_dist >= 0.5, torch.ones_like(resets), resets)
-    # resets = torch.where(left_hand_dist >= 0.2, torch.ones_like(resets), resets)
-    
+    resets = torch.where(up_rew < -0.5, torch.ones_like(reset_buf), reset_buf)
+    resets = torch.where(right_hand_finger_dist >= 1.75, torch.ones_like(resets), resets)
+    resets = torch.where(left_hand_finger_dist >= 1.75, torch.ones_like(resets), resets)
     # Find out which envs hit the goal and update successes count
-    successes = torch.where(successes == 0, 
-                    torch.where(torch.norm(bucket_handle_pos - kettle_spout_pos, p=2, dim=-1) < 0.05, torch.ones_like(successes), successes), successes)
-
     resets = torch.where(progress_buf >= max_episode_length, torch.ones_like(resets), resets)
+
+    successes = torch.where(successes == 0, 
+                    torch.where(object_dof_pos[:, 0] > -0.3, torch.ones_like(successes), successes), successes)
 
     goal_resets = torch.zeros_like(resets)
 
