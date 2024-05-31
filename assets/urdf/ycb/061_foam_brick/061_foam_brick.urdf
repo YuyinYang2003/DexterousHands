@@ -4,7 +4,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="ycb/061_foam_brick/textured.obj" scale="0.01 0.01 0.01"/>
+        <mesh filename="ycb/061_foam_brick/textured.obj" scale="0.04 0.04 0.04"/>
       </geometry>
     </visual>
     <collision>
