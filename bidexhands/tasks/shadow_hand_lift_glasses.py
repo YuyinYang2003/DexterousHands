@@ -118,7 +118,7 @@ class ShadowHandLiftGlasses(BaseTask):
             "pen": "mjcf/open_ai_assets/hand/pen.xml",
             # "pot": "mjcf/pot.xml",
             #"pot": "mjcf/pot/mobility.urdf"
-            "pot": "mjcf/glasses/mobility.urdf"
+            "pot": "mjcf/glasses4/mobility.urdf"
             
         }
 
@@ -670,9 +670,10 @@ class ShadowHandLiftGlasses(BaseTask):
         self.object_angvel = self.root_state_tensor[self.object_indices, 10:13]
 
         self.pot_right_handle_pos = self.object_pos + quat_apply(self.object_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * 0.2)
-        self.pot_right_handle_pos = self.pot_right_handle_pos + quat_apply(self.object_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.06)
+        self.pot_right_handle_pos = self.pot_right_handle_pos + quat_apply(self.object_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.05)
+        #self.pot_right_handle_pos = self.pot_right_handle_pos + quat_apply(self.object_rot, to_torch([1, 0, 0], device=self.device).repeat(self.num_envs, 1) * 0.06)
         self.pot_left_handle_pos = self.object_pos + quat_apply(self.object_rot, to_torch([0, 1, 0], device=self.device).repeat(self.num_envs, 1) * -0.2)
-        self.pot_left_handle_pos = self.pot_left_handle_pos + quat_apply(self.object_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.06)
+        self.pot_left_handle_pos = self.pot_left_handle_pos + quat_apply(self.object_rot, to_torch([0, 0, 1], device=self.device).repeat(self.num_envs, 1) * 0.05)
 
         self.left_hand_pos = self.rigid_body_states[:, 3 + 26, 0:3]
         self.left_hand_rot = self.rigid_body_states[:, 3 + 26, 3:7]
