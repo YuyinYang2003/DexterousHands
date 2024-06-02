@@ -21,6 +21,7 @@
 		<child link="link_0"/>
 		<parent link="link_2"/>
 		<limit lower="-0.0" upper="1.482831732494382"/>
+		<dynamics damping="3.0" friction="3.0"/>
 	</joint>
 	<link name="link_1">
 		<visual name="leg-2">
@@ -42,6 +43,7 @@
 		<child link="link_1"/>
 		<parent link="link_2"/>
 		<limit lower="0.0" upper="1.4639821765728438"/>
+		<dynamics damping="3.0" friction="3.0"/>
 	</joint>
 	<link name="link_2">
 		<visual name="base_body-3">
