@@ -174,6 +174,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     #args.root_dir = '{}/{}'.format(args.root_dir,args.alg_name)
-    args.root_dir = '/home/songsq21/yyy21/DexterousHands/bidexhands/logs/ShadowHandLiftGlasses/ppo/ppo_seed-1'
+    args.root_dir = './DexterousHands/bidexhands/logs/ShadowHandLiftGlasses/ppo/ppo_seed-1'
     csv_files = convert_tfevents_to_csv(args.root_dir, args.alg_type, args.env_num, args.env_step, args.refresh)
     merge_csv(csv_files, args.root_dir, args.remove_zero)
