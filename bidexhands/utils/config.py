@@ -83,6 +83,8 @@ def retrieve_cfg(args, use_rlg_config=False):
         return os.path.join(args.logdir, "{}/{}/{}".format(args.task, args.algo, args.algo)), "cfg/{}/config.yaml".format(args.algo), "cfg/meta_env_cfg/{}.yaml".format(args.task)
 
     else:
+        print(args.task)
+        print(args.algo)
         warn_task_name()
 
 

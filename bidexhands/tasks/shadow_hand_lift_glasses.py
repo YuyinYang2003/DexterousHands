@@ -4,7 +4,7 @@
 # and any modifications thereto.  Any use, reproduction, disclosure or
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
-
+import argparse
 from unittest import TextTestRunner
 from matplotlib.pyplot import axis
 from PIL import Image as Im
@@ -57,13 +57,13 @@ class ShadowHandLiftGlasses(BaseTask):
         is_multi_agent (bool): Specifies whether it is a multi-agent environment
     """
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless, agent_index=[[[0, 1, 2, 3, 4, 5]], [[0, 1, 2, 3, 4, 5]]], is_multi_agent=False):
-        self.cfg = cfg
+        self.cfg = cfg        
         self.sim_params = sim_params
         self.physics_engine = physics_engine
         self.agent_index = agent_index
 
         self.is_multi_agent = is_multi_agent
-
+        #print(self.cfg["task"]["randomize"])
         self.randomize = self.cfg["task"]["randomize"]
         self.randomization_params = self.cfg["task"]["randomization_params"]
         self.aggregate_mode = self.cfg["env"]["aggregateMode"]
@@ -911,7 +911,8 @@ class ShadowHandLiftGlasses(BaseTask):
 
         point_clouds_start = obj_obs_start + 19
         self.obs_buf[:, point_clouds_start:].copy_(point_clouds.view(self.num_envs, self.pointCloudDownsampleNum * 3))
-
+        #print("cloud start")
+        #print(point_clouds_start)
     def reset_target_pose(self, env_ids, apply_reset=False):
         """
         Reset and randomize the goal pose
@@ -1193,6 +1194,7 @@ class ShadowHandLiftGlasses(BaseTask):
 
     def camera_visulization(self, is_depth_image=False):
         if is_depth_image:
+            ###change
             camera_depth_tensor = self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[0], self.cameras[0], gymapi.IMAGE_DEPTH)
             torch_depth_tensor = gymtorch.wrap_tensor(camera_depth_tensor)
             torch_depth_tensor = torch.clamp(torch_depth_tensor, -1, 1)
@@ -1323,7 +1325,7 @@ def compute_hand_reward(
     # Orientation alignment for the cube in hand and goal cube
     quat_diff = quat_mul(object_rot, quat_conjugate(target_rot))
     rot_dist = 2.0 * torch.asin(torch.clamp(torch.norm(quat_diff[:, 0:3], p=2, dim=-1), max=1.0))
-
+    #print(rot_dist)
     right_hand_dist_rew = right_hand_dist
     left_hand_dist_rew = left_hand_dist
 
@@ -1339,10 +1341,11 @@ def compute_hand_reward(
                                         3*(0.385 - goal_dist), up_rew), up_rew)
     
     reward = 0.2 - right_hand_dist_rew - left_hand_dist_rew + up_rew - rot_dist
-    print(reward)
+    #print(reward)
     resets = torch.where(object_pos[:, 2] <= 0.3, torch.ones_like(reset_buf), reset_buf)
     resets = torch.where(right_hand_dist >= 0.2, torch.ones_like(resets), resets)
     resets = torch.where(left_hand_dist >= 0.2, torch.ones_like(resets), resets)
+    resets = torch.where(rot_dist >= 1, torch.ones_like(resets), resets)
 
     # Find out which envs hit the goal and update successes count
     successes = torch.where(successes == 0, 
