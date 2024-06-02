@@ -1321,8 +1321,8 @@ def compute_hand_reward(
     right_hand_dist = torch.norm(pot_right_handle_pos - right_hand_pos, p=2, dim=-1)
     left_hand_dist = torch.norm(pot_left_handle_pos - left_hand_pos, p=2, dim=-1)
     # Orientation alignment for the cube in hand and goal cube
-    # quat_diff = quat_mul(object_rot, quat_conjugate(target_rot))
-    # rot_dist = 2.0 * torch.asin(torch.clamp(torch.norm(quat_diff[:, 0:3], p=2, dim=-1), max=1.0))
+    quat_diff = quat_mul(object_rot, quat_conjugate(target_rot))
+    rot_dist = 2.0 * torch.asin(torch.clamp(torch.norm(quat_diff[:, 0:3], p=2, dim=-1), max=1.0))
 
     right_hand_dist_rew = right_hand_dist
     left_hand_dist_rew = left_hand_dist
@@ -1338,8 +1338,8 @@ def compute_hand_reward(
                         torch.where(left_hand_dist < 0.08,
                                         3*(0.385 - goal_dist), up_rew), up_rew)
     
-    reward = 0.2 - right_hand_dist_rew - left_hand_dist_rew + up_rew
-
+    reward = 0.2 - right_hand_dist_rew - left_hand_dist_rew + up_rew - rot_dist
+    print(reward)
     resets = torch.where(object_pos[:, 2] <= 0.3, torch.ones_like(reset_buf), reset_buf)
     resets = torch.where(right_hand_dist >= 0.2, torch.ones_like(resets), resets)
     resets = torch.where(left_hand_dist >= 0.2, torch.ones_like(resets), resets)
