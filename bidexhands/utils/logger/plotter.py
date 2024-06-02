@@ -261,7 +261,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     file_lists = find_all_files(args.root_dir, re.compile(args.file_pattern))
     #file_lists = [os.path.relpath(f, args.root_dir) for f in file_lists]
-    file_lists = ["/home/songsq21/yyy21/DexterousHands/bidexhands/logs/ShadowHandLiftGlasses/ppo/ppo_seed-1/test_rew_1seeds.csv"]
+    file_lists = ["./DexterousHands/bidexhands/logs/ShadowHandLiftGlasses/ppo/ppo_seed-1/test_rew_1seeds.csv"]
     if args.style:
         plt.style.use(args.style)
     os.chdir(args.root_dir)
