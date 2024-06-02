@@ -288,7 +288,7 @@ if __name__ == "__main__":
     os.chdir('../../')
     abs_path = os.path.abspath('{}'.format(args.output_path))
     #args.output_path = abs_path
-    args.output_path = "/home/songsq21/yyy21/DexterousHands/bidexhands/logs/ShadowHandLiftGlasses/ppo/ppo_seed-1/test_rew_curve.jpg"
+    args.output_path = "./DexterousHands/bidexhands/logs/ShadowHandLiftGlasses/ppo/ppo_seed-1/test_rew_curve.jpg"
     if args.output_path:
         plt.savefig(args.output_path, dpi=args.dpi, bbox_inches='tight')
     if args.show:
