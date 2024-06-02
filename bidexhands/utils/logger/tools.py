@@ -74,15 +74,18 @@ def convert_tfevents_to_csv(root_dir, alg_type, env_num, env_step, refresh=False
             
             ea = event_accumulator.EventAccumulator(tfevent_file)
             ea.Reload()
+            if "Train/mean_reward" not in ea.Tags()['scalars']:
+                continue
             initial_time = ea._first_event_timestamp
             content = [["env_step", "rew", "time"]]
-
+            #print(ea.Tags().keys)
             
             if alg_type == "sarl":
                 for i, test_rew in enumerate(ea.scalars.Items("Train/mean_reward")):
                     content.append(
                         [
-                            test_rew.step * env_step * env_num,   # if env is to lift a pot, change it as test_rew.step * 20 * 2048
+                            #test_rew.step * env_step * env_num,   # if env is to lift a pot, change it as test_rew.step * 20 * 2048
+                            test_rew.step * 20 * 2048,
                             round(test_rew.value, 4),
                             round(test_rew.wall_time - initial_time, 4),
                         ]
@@ -97,7 +100,7 @@ def convert_tfevents_to_csv(root_dir, alg_type, env_num, env_step, refresh=False
                             round(test_rew.wall_time - initial_time, 4),
                         ]
                     )
-                    
+            #print(content)        
             csv.writer(open(output_file, 'w')).writerows(content)
             result[output_file] = content
     return result
@@ -169,7 +172,7 @@ if __name__ == "__main__":
     parser.add_argument('--root-dir', type=str)
     args = parser.parse_args()
     
-    args.root_dir = '{}/{}'.format(args.root_dir,args.alg_name)
-
+    #args.root_dir = '{}/{}'.format(args.root_dir,args.alg_name)
+    args.root_dir = '/home/songsq21/yyy21/DexterousHands/bidexhands/logs/ShadowHandLiftGlasses/ppo/ppo_seed-1'
     csv_files = convert_tfevents_to_csv(args.root_dir, args.alg_type, args.env_num, args.env_step, args.refresh)
     merge_csv(csv_files, args.root_dir, args.remove_zero)

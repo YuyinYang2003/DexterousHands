@@ -118,7 +118,7 @@ class ShadowHandLiftGlasses(BaseTask):
             "pen": "mjcf/open_ai_assets/hand/pen.xml",
             # "pot": "mjcf/pot.xml",
             #"pot": "mjcf/pot/mobility.urdf"
-            "pot": "mjcf/glasses4/mobility.urdf"
+            "pot": "mjcf/glasses_fixed/mobility.urdf"
             
         }
 
@@ -199,7 +199,7 @@ class ShadowHandLiftGlasses(BaseTask):
         self.vec_sensor_tensor = gymtorch.wrap_tensor(sensor_tensor).view(self.num_envs, self.num_fingertips * 6)
 
         dof_force_tensor = self.gym.acquire_dof_force_tensor(self.sim)
-        self.dof_force_tensor = gymtorch.wrap_tensor(dof_force_tensor).view(self.num_envs, self.num_shadow_hand_dofs * 2 + 4)
+        self.dof_force_tensor = gymtorch.wrap_tensor(dof_force_tensor).view(self.num_envs, self.num_shadow_hand_dofs * 2 )
         self.dof_force_tensor = self.dof_force_tensor[:, :48]
 
         self.gym.refresh_actor_root_state_tensor(self.sim)

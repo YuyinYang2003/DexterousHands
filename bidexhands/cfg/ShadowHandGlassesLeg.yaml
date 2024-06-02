@@ -80,26 +80,30 @@ task:
         color: True
         tendon_properties:
           damping:
-            range: [0.3, 3.0]
+            #range: [0.3, 3.0]
+            range: [1, 4]
             operation: "scaling"
             distribution: "loguniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
             schedule_steps: 30000
           stiffness:
-            range: [0.75, 1.5]
+            #range: [0.75, 1.5]
+            range: [1.5, 3]
             operation: "scaling"
             distribution: "loguniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
             schedule_steps: 30000
         dof_properties:
           damping: 
-            range: [0.3, 3.0]
+            #range: [0.3, 3.0]
+            range: [1, 4]
             operation: "scaling"
             distribution: "loguniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
             schedule_steps: 30000
           stiffness: 
-            range: [0.75, 1.5]
+            #range: [0.75, 1.5]
+            range: [1.5, 3]
             operation: "scaling"
             distribution: "loguniform"
             schedule: "linear"  # "linear" will scale the current random sample by `min(current num steps, schedule_steps) / schedule_steps`
